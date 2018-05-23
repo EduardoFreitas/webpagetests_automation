@@ -1,12 +1,9 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import create_engine
 
-from settings import load_configuration
-
+import db.config
 import datetime
-import os
 
 Base = declarative_base()
 
@@ -19,10 +16,13 @@ class Url(Base):
 
 
 class LocationGroup(Base):
-    __tablename__ = 'location_groups'
+    __tablename__ = 'location_group'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     update = Column(DateTime, default=datetime.datetime.utcnow)
+
+    def __repr__(self):
+        return "<LocationGroup instance: %(id)s>" % self.__dict__
 
 
 class Location(Base):
@@ -30,18 +30,34 @@ class Location(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     location = Column(String(50), nullable=False)
-    location_group_id = Column(Integer, ForeignKey('location_groups.id'))
+    location_group_id = Column(Integer, ForeignKey('location_group.id'))
     update = Column(DateTime, default=datetime.datetime.utcnow)
     location_group = relationship(LocationGroup)
+
+    def __repr__(self):
+        return "<Location instance: %(id)s>" % self.__dict__
 
 
 class Browser(Base):
     __tablename__ = 'browsers'
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False, unique=True)
+
+    def __repr__(self):
+        return "<Browser instance: %(id)s>" % self.__dict__
+
+
+class LocationBrowser(Base):
+    __tablename__ = 'locations_browser'
+    id = Column(Integer, primary_key=True)
     location_id = Column(Integer, ForeignKey('locations.id'))
+    browser_id = Column(Integer, ForeignKey('browsers.id'))
     update = Column(DateTime, default=datetime.datetime.utcnow)
     location = relationship(Location)
+    browser = relationship(Browser)
+
+    def __repr__(self):
+        return "<LocationBrowser instance: %(id)s>" % self.__dict__
 
 
 class Speed(Base):
@@ -59,16 +75,13 @@ class Schedule(Base):
     active = Column(Boolean, default=True)
 
     url_id = Column(Integer, ForeignKey('urls.id'))
-    browser_id = Column(Integer, ForeignKey('browsers.id'))
     speed_id = Column(Integer, ForeignKey('speeds.id'))
-    # not normalized for performance
-    location_id = Column(Integer, ForeignKey('locations.id'))
+    location_browser_id = Column(Integer, ForeignKey('locations_browser.id'))
 
     update = Column(DateTime, default=datetime.datetime.utcnow)
     url = relationship(Url)
-    browser = relationship(Browser)
     speed = relationship(Speed)
-    location = relationship(Location)
+    location_browser = relationship(LocationBrowser)
 
 
 class Request(Base):
@@ -120,17 +133,4 @@ class Response(Base):
     request = relationship(Request)
 
 
-load_configuration()
-
-db_username = os.environ["db_username"]
-db_password = os.environ["db_password"]
-db_name = os.environ["db_name"]
-host = os.environ["host"]
-
-conn_data = 'mysql+pymysql://{}:{}@{}/{}'.format(db_username, db_password, host, db_name)
-
-engine = create_engine(conn_data)
-
-# Create all tables in the engine. This is equivalent to "Create Table"
-# statements in raw SQL.
-Base.metadata.create_all(engine)
+Base.metadata.create_all(db.config.engine)
