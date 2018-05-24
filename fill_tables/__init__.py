@@ -88,5 +88,5 @@ if __name__ == '__main__':
     # insert_browsers_and_location_group()
     # insert_location()
     # insert_speeds()
-    create_schedule()
+    # create_schedule()
     session.close()

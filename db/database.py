@@ -83,6 +83,9 @@ class Schedule(Base):
     speed = relationship(Speed)
     location_browser = relationship(LocationBrowser)
 
+    def __repr__(self):
+        return "<Schedule instance: %(id)s>" % self.__dict__
+
 
 class Request(Base):
     __tablename__ = 'requests'
@@ -95,6 +98,9 @@ class Request(Base):
     erros = Column(Boolean, default=False)
     update = Column(DateTime, default=datetime.datetime.utcnow)
     schedule = relationship(Schedule)
+
+    def __repr__(self):
+        return "<Request instance: %(id)s>" % self.__dict__
 
 
 class Response(Base):
@@ -131,6 +137,9 @@ class Response(Base):
     first = Column(Boolean)
     update = Column(DateTime, default=datetime.datetime.utcnow)
     request = relationship(Request)
+
+    def __repr__(self):
+        return "<Response instance: %(id)s>" % self.__dict__
 
 
 Base.metadata.create_all(db.config.engine)
